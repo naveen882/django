@@ -1,0 +1,4 @@
+uwsgi --socket :8001 --wsgi-file hpro/wsgi.py
+sudo ln -s ~/django-test/hpro/conf/hpro.conf /etc/nginx/sites-enabled/
+
+sudo pip install redis

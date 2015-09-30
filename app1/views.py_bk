@@ -1,0 +1,115 @@
+# Create your views here.
+from django.contrib.auth import authenticate
+from django.http import HttpResponse,HttpResponseForbidden
+import json
+import os
+from django.contrib.auth.models import User
+from .models import Candidates
+from app2.models import *
+
+
+# Create your views here.
+def login(request):
+   try:
+      data = json.loads(request.body)
+      username = data['username']
+      password = data['password']
+      user = authenticate(username=username, password=password)
+      print "=======================\n"
+      print request.session
+      print request
+      print dir(request.session)
+      print request.session.keys()
+      print "hi" in request.session
+      print request.session["hi"]
+
+      try:
+         if "hi" not in request.session:
+            request.session['hi']="hi1"
+            print request.session['hi']
+      except Exception as e:
+         print e
+      if user is not None:
+         if user.is_active:
+           return HttpResponse("Authorized")
+         else:
+           return HttpResponseForbidden("User disabled")
+      else:
+          return HttpResponseForbidden("The username and password were incorrect.")
+   except:
+      raise
+
+def get_files(request):
+   try:
+      path = request.GET.get('path', '')
+      out = os.listdir(path)
+      return HttpResponse(out)
+   except:
+      raise
+
+def list_users(request):
+   try:
+      status = request.GET.get('status', None)
+      if status != None:
+         users = User.objects.filter(is_active=status)
+      else:
+         users = User.objects.all()
+      user_list = [user.username for user in users]
+      return HttpResponse(user_list)
+   except:
+      raise
+
+
+def save_candidate(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+def db1save(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+
+def db2save(request):
+	try:
+		#candidate_full_texts.full_clean()
+		c1 = candidate_full_texts(created_by=1)
+		c1.save()
+		print c1.id
+		return HttpResponse(c1.id)
+	except Exception as e:
+		print e		
+
+def gsave(request):
+	print "12345"
+	try:
+		if request.method == 'POST':
+			print "In login=========="
+			data = json.loads(request.body)
+			if 'version' and 'notes' and 'importance' and 'no_of_attachments' and 'technology_text' and 'created_by' and 'bulk_custom_field_string' and 'is_utilized' and 'is_deleted' in data:
+				c=Candidates(version=data['version'],notes=data['notes'],importance=data['importance'],technology_text=data['technology_text'],bulk_custom_field_string=data['bulk_custom_field_string'],no_of_attachments=data['no_of_attachments'],created_by=data['created_by'],is_utilized=data['is_utilized'],is_deleted=data['is_deleted'])
+				c.save()
+				#c.save(using='db2')
+				print "========1"
+				print c.id
+				first_db = c.id
+				print "========1"
+				#c1 = Candidates_core(version=data['version'],notes=data['notes'],importance=data['importance'],technology_text=data['technology_text'],bulk_custom_field_string=data['bulk_custom_field_string'],no_of_attachments=data['no_of_attachments'],created_by=data['created_by'],is_utilized=data['is_utilized'],is_deleted=data['is_deleted'])
+				c.pk=None
+				c.save(using='db2',force_insert=True) #candidate table should exist with same name ,model name doesnt matter in this case
+				print "========2"
+				print c.id
+				inserted  = "db1 inserted id is %s and db2 inserted id is %s"%(first_db,c.id)
+				print "========2"
+				return HttpResponse(inserted)
+	except Exception as e:
+		print e		

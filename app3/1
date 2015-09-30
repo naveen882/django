@@ -1,0 +1,24 @@
+from django.db import models
+# Create your models here.
+from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+from django.db.models import fields
+
+
+class candidate_full_texts(models.Model):
+	candidate_resume_full_text = models.TextField(null=True)
+	candidate_id = models.IntegerField(null=True)
+	created_by = models.IntegerField()
+	created_on = models.DateTimeField(auto_now_add=True)
+	modified_by = models.IntegerField(null=True)
+	modified_on = models.DateTimeField(null=True)
+	tenant_id = models.IntegerField(null=True)
+	rank = models.IntegerField(null=True)
+
+	class Meta:
+		db_table = 'candidate_full_texts'
+
+	def clean(self):
+		if (self.created_by is None):
+			raise ValidationError('Validation Error')
+

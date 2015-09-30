@@ -1,0 +1,12 @@
+//create candidate json
+{
+    "version": 1,
+    "notes": "12345",
+    "importance": 1,
+    "no_of_attachments": 0,
+    "technology_text": "Python",
+    "created_by": 1,
+    "bulk_custom_field_string": "sometext",
+    "is_utilized": 0,
+    "is_deleted" : 0
+}

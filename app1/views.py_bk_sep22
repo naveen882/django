@@ -1,0 +1,123 @@
+# Create your views here.
+from django.contrib.auth import authenticate
+from django.http import HttpResponse,HttpResponseForbidden
+import json
+import os
+from django.contrib.auth.models import User
+from .models import Candidates
+from app2.models import *
+
+
+# Create your views here.
+def login(request):
+   try:
+      data = json.loads(request.body)
+      username = data['username']
+      password = data['password']
+      user = authenticate(username=username, password=password)
+      print "=======================\n"
+      print request.session
+      print request
+      print dir(request.session)
+      print request.session.keys()
+      print "hi" in request.session
+      print request.session["hi"]
+
+      try:
+         if "hi" not in request.session:
+            request.session['hi']="hi1"
+            print request.session['hi']
+      except Exception as e:
+         print e
+      if user is not None:
+         if user.is_active:
+           return HttpResponse("Authorized")
+         else:
+           return HttpResponseForbidden("User disabled")
+      else:
+          return HttpResponseForbidden("The username and password were incorrect.")
+   except:
+      raise
+
+def get_files(request):
+   try:
+      path = request.GET.get('path', '')
+      out = os.listdir(path)
+      return HttpResponse(out)
+   except:
+      raise
+
+def list_users(request):
+   try:
+      status = request.GET.get('status', None)
+      if status != None:
+         users = User.objects.filter(is_active=status)
+      else:
+         users = User.objects.all()
+      user_list = [user.username for user in users]
+      return HttpResponse(user_list)
+   except:
+      raise
+
+
+def save_candidate(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+def db1save(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+
+def db2save(request):
+	try:
+		#candidate_full_texts.full_clean()
+		c1 = candidate_full_texts(created_by=1)
+		c1.save()
+		print c1.id
+		return HttpResponse(c1.id)
+	except Exception as e:
+		print e		
+
+def gsave(request):
+	inserted = "Incorrect Json"
+	try:
+		if request.method == 'POST':
+			data = json.loads(request.body)
+			all_fields =[ 'current_employer_id', 'current_employer_text', 'current_location_id', 'date_of_birth', 'final_degree_id', 'final_degree_text', 'final_department_id', 'final_department_text', 'gender', 'is_fresher', 'current_location_text', 'marital_status', 'opening_status_id', 'status_id', 'total_experience', 'relevant_experience', 'expertise_id1', 'expertise_text', 'expertise_id2', 'hierarchy_id', 'hierarchy_text', 'university_id', 'university_text', 'email1', 'email2', 'first_name', 'last_name', 'middle_name', 'mobile1', 'phone_office', 'phone_residence', 'sensitivity', 'salutation', 'college_id', 'college_text', 'resume_grade_id', 'experience_updated_on', 'current_ctc', 'user_id', 'candidate_name', 'brownie_point_total', 'sourcer', 'sourcer_log', 'crm_status_date', 'address1', 'address2', 'address3', 'notice_period', 'skill_id', 'current_source_id', 'sourcer_modified_date', 'tenant_id', 'published_on', 'published_by', 'is_active', 'is_draft', 'is_archived', 'true_false2', 'true_false1', 'integer2', 'integer1', 'text4', 'text3', 'text2', 'text1', 'is_alive', 'created_on', 'modified_by', 'modified_on', 'guid', 'candidateoriginalsourceinfo_id', 'candidatepreference_id', 'candidatesourceinfo_id', 'percentage_or_cgp', 'is_percentage', 'original_candidate_id', 'pan_card', 'passport', 'percentage_of_duplication', 'candidateresumefulltext_id', 'candidatefulltext_id', 'country_code', 'is_black_listed', 'duplicate_or_blacklist_comment', 'original_source_info_modified', 'duplication_comment', 'is_set_resume_status_to_crm', 'is_rejected', 'is_partial_duplicate', 'black_list_mode', 'soft_delete_type', 'candidate_photo_file_id', 'is_hirepro_vendor_candidate', 'audio_file_name', 'text5', 'integer3', 'integer4', 'integer5', 'password', 'owner_id', 'usn', 'country', 'nationality', 'familydetail_id', 'type_of_candidate', 'original_source_id', 'source_modified_by', 'source_modified_on', 'originated_from', 'level_id', 'role_Id', 'mentor', 'buddies', 'bu_id', 'current_activity', 'activity_status', 'candidate_user_id', 'candidatestaffingprofile_id', 'current_experience', 'bpo_experience', 'date_custom_field1', 'date_custom_field2', 'text_area1', 'text_area2', 'text_area3', 'text_area4', 'candidate_photo_path', 'uuid']
+			mandatory_params = ['version' , 'notes' , 'importance' ,'no_of_attachments' , 'technology_text' , 'created_by' , 'bulk_custom_field_string'  , 'is_utilized' , 'is_deleted']
+			needs = set(data.keys())
+			if set(mandatory_params).issubset(needs):
+				print set(mandatory_params).issubset(needs)
+				c=Candidates(version=data['version'],notes=data['notes'],importance=data['importance'],technology_text=data['technology_text'],bulk_custom_field_string=data['bulk_custom_field_string'],no_of_attachments=data['no_of_attachments'],created_by=data['created_by'],is_utilized=data['is_utilized'],is_deleted=data['is_deleted'])
+				for key in all_fields:
+					if key in data:
+						setattr(c, key, data[key])
+				c.save()
+				first_db = c.id
+				c.pk=None
+				c.save(using='db2',force_insert=True) #candidate table should exist with same name ,model name doesnt matter in this case
+				inserted  = "db1 inserted id is %s and db2 inserted id is %s"%(first_db,c.id)
+			else:
+				print "In else......."
+				inserted = "Missing items are "
+				for k in set(mandatory_params).difference(data):#missing items in request
+					inserted += "," + str(k)
+				
+	except Exception as e:
+		print "In exception......."
+		print e		
+	return HttpResponse(inserted)
+
+def app(request):
+	return HttpResponse("hello world")

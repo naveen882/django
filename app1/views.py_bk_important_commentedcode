@@ -1,0 +1,389 @@
+# Create your views here.
+from django.contrib.auth import authenticate
+from django.http import HttpResponse,HttpResponseForbidden
+import json
+import os
+from django.contrib.auth.models import User
+from .models import Candidates,Candidate_education_profiles,Candidate_work_profiles,Candidate_location_preferences,Candidate_preferences,Attachments,Files
+from app2.models import *
+import logging
+from django.core import serializers
+from django.http import JsonResponse
+
+
+# Create your views here.
+def login(request):
+   try:
+      data = json.loads(request.body)
+      username = data['username']
+      password = data['password']
+      user = authenticate(username=username, password=password)
+      print "=======================\n"
+      print request.session
+      print request
+      print dir(request.session)
+      print request.session.keys()
+      print "hi" in request.session
+      print request.session["hi"]
+
+      try:
+         if "hi" not in request.session:
+            request.session['hi']="hi1"
+            print request.session['hi']
+      except Exception as e:
+         print e
+      if user is not None:
+         if user.is_active:
+           return HttpResponse("Authorized")
+         else:
+           return HttpResponseForbidden("User disabled")
+      else:
+          return HttpResponseForbidden("The username and password were incorrect.")
+   except:
+      raise
+
+def get_files(request):
+   try:
+      path = request.GET.get('path', '')
+      out = os.listdir(path)
+      return HttpResponse(out)
+   except:
+      raise
+
+def list_users(request):
+   try:
+      status = request.GET.get('status', None)
+      if status != None:
+         users = User.objects.filter(is_active=status)
+      else:
+         users = User.objects.all()
+      user_list = [user.username for user in users]
+      return HttpResponse(user_list)
+   except:
+      raise
+
+
+def save_candidate(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+def db1save(request):
+	try:
+		c=Candidates(version=1,notes='12',importance=1,technology_text='ss django',bulk_custom_field_string='123',no_of_attachments=1,is_alive=1,created_by=1,is_deleted=1,guid='12',is_black_listed=0,is_partial_duplicate=0,black_list_mode=0,soft_delete_type=0,is_utilized=0,type_of_candidate=0)
+		c.save()
+		print c.id
+		return HttpResponse(c.id)
+	except Exception as e:
+		print e		
+
+
+def db2save(request):
+	try:
+		#candidate_full_texts.full_clean()
+		c1 = candidate_full_texts(created_by=1)
+		c1.save()
+		print c1.id
+		return HttpResponse(c1.id)
+	except Exception as e:
+		print e		
+
+def app(request):
+	return HttpResponse("hello world")
+
+
+def cust_serialize(obj):
+	return serializers.serialize('json', [obj])
+
+def json_post(request, model, mandatory_params=[],other_db = None):
+	response = {'message' : 'Incorrect Json'}
+	try:
+		json_request = json.loads(request.body)
+		print json_request
+		json_keys_set = set(json_request.keys())
+		#models_fields_set = set(Candidates._meta.get_all_field_names())
+		if set(mandatory_params).issubset(json_keys_set): #if mandatory fields are in the json request then continue
+			obj = model()
+			print "inside......"
+			#for key in models_fields_set & json_keys_set:
+			for key in model._meta.get_all_field_names():
+				if key in json_request:
+					print "======"
+					print key
+					setattr(obj, key, json_request[key])
+			obj.save()
+			response['data'] = cust_serialize(obj)
+			#inserted  = "db1 inserted id is %s "%(obj.id)
+			print "inside......1"
+			if other_db is not None:
+				obj.pk=None
+				#candidate.save(using='db2',force_insert=True) #candidate table should exist with same name ,model name doesnt matter in this case
+				obj.save(using=other_db,force_insert=True) #candidate table should exist with same name ,model name doesnt matter in this case
+				#inserted  += "and db2 inserted id is %s"%(obj.id)
+				response['data1'] = cust_serialize(obj)
+			response['message'] = 'Success'
+		else:
+			print "In else......."
+			data = "Missing json parameters are "
+			for k in set(mandatory_params).difference(json_request):#missing items in request
+				data += "," + str(k)
+			response['message'] = 'Unsuccessfull. ' + data
+	except Exception as e:
+		inserted="Exception"
+		print "In exception......."
+		response['message'] = 'Exception'
+		logging.exception("Exception"+str(e))
+		print e		
+	print response
+	return response
+
+
+
+
+def candidate_create(request):
+	response_data = {}
+	try:
+		require_params = ['version' , 'notes' , 'importance' ,'no_of_attachments' , 'technology_text' , 'created_by' , 'bulk_custom_field_string'  , 'is_utilized' , 'is_deleted']
+		if request.method == 'POST':
+			response_data = json_post(request,Candidates,require_params,'db2')
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+
+
+def candidate_educationprofiles_create(request):
+	response_data = {}
+	try:
+		require_params = ['created_by']
+		if request.method == 'POST':
+			response_data = json_post(request,Candidate_education_profiles,require_params)
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Candidate_education_profiles._meta.get_all_field_names())
+	#		mandatory_params = ['created_by']
+	#		if set(mandatory_params).issubset(set(data.keys())): #if mandatory fields are in the json request then continue
+	#			candidate = Candidate_education_profiles()
+	#			#for key in Candidate_education_profiles._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				#if key in data:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
+
+def candidate_work_profiles(request):
+	response_data = {}
+	try:
+		require_params = ['created_by']
+		if request.method == 'POST':
+			response_data = json_post(request,Candidate_work_profiles,require_params)
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Candidate_work_profiles._meta.get_all_field_names())
+	#		mandatory_params = ['created_by']
+	#		if set(mandatory_params).issubset(set(data.keys())): #if mandatory fields are in the json request then continue
+	#			candidate = Candidate_work_profiles()
+	#			#for key in Candidate_work_profiles._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				#if key in data:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
+
+def candidate_location_preferences(request):
+	response_data = {}
+	try:
+		require_params = ['location_id','created_by']
+		if request.method == 'POST':
+			response_data = json_post(request,Candidate_location_preferences,require_params)
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		mandatory_params = ['location_id','created_by']
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Candidate_location_preferences._meta.get_all_field_names())
+	#		if set(mandatory_params).issubset(json_keys_set): #if mandatory fields are in the json request then continue
+	#			candidate = Candidate_location_preferences()
+	#			#for key in Candidate_location_preferences._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
+def candidate_preferences(request):
+	response_data = {}
+	try:
+		require_params = ['created_by']
+		if request.method == 'POST':
+			response_data = json_post(request,Candidate_preferences,require_params,'db2')
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Candidate_preferences._meta.get_all_field_names())
+	#		mandatory_params = ['created_by']
+	#		if set(mandatory_params).issubset(set(data.keys())): #if mandatory fields are in the json request then continue
+	#			candidate = Candidate_preferences()
+	#			#for key in Candidate_preferences._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				#if key in data:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
+def attachments(request):
+	response_data = {}
+	try:
+		require_params = ['version', 'created_by','is_deleted', 'guid']
+		if request.method == 'POST':
+			response_data = json_post(request,Attachments,require_params)
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Attachments._meta.get_all_field_names())
+	#		mandatory_params = ['version', 'created_by','is_deleted', 'guid']
+	#		if set(mandatory_params).issubset(set(data.keys())): #if mandatory fields are in the json request then continue
+	#			candidate = Attachments()
+	#			#for key in Attachments._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				#if key in data:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
+def files(request):
+	response_data = {}
+	try:
+		require_params = ['version', 'title' ,'created_by','original_file_name','file_size','target_path','is_deleted','guid']
+		if request.method == 'POST':
+			response_data = json_post(request,Files,require_params)
+		elif request.method == 'GET':
+			pass
+	except Exception as e:
+		response_dict['message'] = 'Exception'
+	return HttpResponse(JsonResponse(response_data), content_type="application/json")
+	#inserted = "Incorrect Json"
+	#print "In files"
+	#try:
+	#	if request.method == 'POST':
+	#		data = json.loads(request.body)
+	#		print data
+	#		json_keys_set = set(data.keys())
+	#		models_fields_set = set(Files._meta.get_all_field_names())
+	#		mandatory_params = ['version', 'title' ,'created_by','original_file_name','file_size','target_path','is_deleted','guid']
+	#		if set(mandatory_params).issubset(set(data.keys())): #if mandatory fields are in the json request then continue
+	#			candidate = Files()
+	#			#for key in Files._meta.get_all_field_names():
+	#			for key in models_fields_set & json_keys_set:
+	#				#if key in data:
+	#				setattr(candidate, key, data[key])
+	#			candidate.save()
+	#			inserted  = "db1 inserted id is %s "%(candidate.id)
+	#		else:
+	#			print "In else......."
+	#			inserted = "Missing json parameters are "
+	#			for k in set(mandatory_params).difference(data):#missing items in request
+	#				inserted += "," + str(k)
+	#except Exception as e:
+	#	print "In exception......."
+	#	logging.exception("Exception"+str(e))
+	#	print e		
+	#return HttpResponse(inserted)
+
