@@ -2,3 +2,4 @@ uwsgi --socket :8001 --wsgi-file hpro/wsgi.py
 sudo ln -s ~/django-test/hpro/conf/hpro.conf /etc/nginx/sites-enabled/
 
 sudo pip install redis
+#https://stackoverflow.com/questions/10608681/how-to-test-render-to-template-functions-in-django-tdd
